@@ -119,3 +119,151 @@ func TestBaseGeneratorNotStarted(t *testing.T) {
     g.Next()
 
 }
+
+func TestSliceFromGenerator(t*testing.T){
+    var counter *int = new(int)
+    *counter         = 10
+
+    next := func() (int, bool) {
+        if *counter > 0 {
+            *counter--
+            return *counter + 1, false
+        } else {
+            return 0, true
+        }
+    }
+    stop := func() { *counter = 999 }
+    g := new(BaseGenerator[int])
+    g.Start(next, stop)
+    slice := Slice[int](g)
+
+    if len(slice) != 10 {
+        t.Errorf("Generated slice is of the wrong size (%v instead of 10)", len(slice))
+    }
+
+    for i, k := range slice {
+        if k != 10-i {
+            t.Errorf("Slice at index %v has value %v instead of %v", i, k, 10-i)
+        }
+    }
+    fmt.Println(slice)
+}
+
+func TestTransformGenerator(t *testing.T) {
+    var counter *int = new(int)
+    *counter         = 10
+
+    next := func() (int, bool) {
+        if *counter > 0 {
+            *counter--
+            return *counter + 1, false
+        } else {
+            return 0, true
+        }
+    }
+    stop := func() { *counter = 999 }
+    g := new(BaseGenerator[int])
+    g.Start(next, stop)
+    transformation := func (i int)string {return fmt.Sprint(i)}
+
+    gt := Transform[int, string](g, transformation)
+
+    for i := 0; i < 10; i++ {
+        if k, done := gt.Next(); !done {
+            if k != fmt.Sprint(10-i) {
+                t.Errorf(generator_returned_wrong_ouput, "that counts down from 10", k, i, 10-i)
+            }
+        } else {
+            t.Errorf(generator_done_when_shouldnt, "that counts down from 10 ", i, 10)
+        }
+    }
+
+    if k, done := gt.Next(); done {
+        if k != "" {
+            t.Errorf("The generator answered something that the next method did not specify. Finishing case should be (0, done), is (%v, done)", k)
+        }
+    } else {
+        t.Errorf(generator_not_done_when_should, "that counts down from 10 ", 10, 10)
+    }
+}
+
+
+func TestCombineGenerator(t *testing.T) {
+    var counter *int = new(int)
+    *counter         = 10
+
+    next := func() (int, bool) {
+        if *counter > 0 {
+            *counter--
+            return *counter + 1, false
+        } else {
+            return 0, true
+        }
+    }
+    stop := func() { *counter = 999 }
+    g := new(BaseGenerator[int])
+    mesa_parser := func (i int)Generator[int] {
+        var sub_counter *int = new(int)
+        *sub_counter = i
+
+        n := func() (int, bool) {
+            if *sub_counter > 0 {
+                *sub_counter--
+                return *sub_counter + 1, false
+            } else {
+                return 0, true
+            }
+        }
+        s := func(){}
+
+        gc := new(BaseGenerator[int])
+
+        gc.Start(n, s)
+        return gc
+    }
+    g.Start(next, stop)
+    gc := Combine[int, int](g, mesa_parser)
+
+    var main_counter = 10
+    var expectation = 10
+    for i := 0; i < 55; i++ { // 55 because n*(n+1)/2 = 10 * 11 / 2 = 55
+        if k, done := gc.Next(); !done {
+            if k != expectation {
+                t.Errorf(generator_returned_wrong_ouput,  "that counts all counts of length under 10 ", k, i, expectation)
+            }
+            expectation --
+            if expectation == 0 {
+                main_counter --
+                expectation = main_counter
+            }
+        } else {
+            t.Errorf(generator_done_when_shouldnt, "that counts all counts of length under 10 ", k, 55)
+        }
+    }
+
+}
+
+
+func TestSliceGenerator(t *testing.T) {
+    slice := []int{10,9,8,7,6,5,4,3,2,1}
+    sg := SliceGenerator[int](slice)
+
+    for i := 0; i < 10; i++ {
+		if k, done := sg.Next(); !done {
+			if k+i != 10 {
+				t.Errorf(generator_returned_wrong_ouput, "that counts down from 10", k, i, 10-i)
+			}
+		} else {
+			t.Errorf(generator_done_when_shouldnt, "that counts down from 10 ", i, 10)
+		}
+	}
+
+    if k, done := sg.Next(); done {
+        if k != 0 {
+            t.Errorf("The generator answered something that the next method did not specify. Finishing case should be (0, done), is (%v, done)", k)
+        }
+    } else {
+        t.Errorf(generator_not_done_when_should, "that counts down from 10 ", 10, 10)
+    }
+
+}
