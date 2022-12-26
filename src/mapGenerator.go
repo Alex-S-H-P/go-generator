@@ -20,6 +20,7 @@ func (mg *MapGenerator[K, V]) Start(m map[K]V) {
 	mg.stopchan = make(chan bool)
 
 	go func() {
+
 		for k, _ := range m {
 			fmt.Println(k)
 			select {

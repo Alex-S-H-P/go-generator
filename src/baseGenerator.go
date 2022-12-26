@@ -1,7 +1,8 @@
 package generator
 
 import (
-    "fmt"
+    "sync"
+    "time"
 )
 
 /*
@@ -15,6 +16,9 @@ type BaseGenerator[T any] struct {
 
 	returned chan T
 	stopchan chan bool
+
+    stoppingLock sync.RWMutex
+    started bool
 
 	nb      int
 	stopped bool
@@ -36,8 +40,8 @@ func (g *BaseGenerator[T]) Start(next func() (T, bool), stop func()) {
 	go func() {
 		g.nb++
 		for {
+
 			g.el, g.stopped = g.next()
-            fmt.Println(g.el, g.stopped)
 			if g.stopped {
                 g.stop()
 				return
@@ -50,6 +54,7 @@ func (g *BaseGenerator[T]) Start(next func() (T, bool), stop func()) {
 			}
 		}
 	}()
+    g.started = true
 }
 
 // Returns the next element of the generator, if the generator is previously finished, returns true. Does return the last element
@@ -57,14 +62,31 @@ func (g *BaseGenerator[T]) Next() (T, bool) {
 	default_t := *(new(T))
     if g == nil {return default_t, true}
 
-	if g.stopped {
-		return default_t, true
-	} else {
-        fmt.Println("waiting for result")
-		el := <-g.returned
-        fmt.Println("result ?")
-		return el, false
-	}
+
+    if !g.started {
+        time.Sleep(3000*time.Microsecond)
+        if !g.started {
+            panic("Generator not started")
+        } else {
+            return g.Next()
+        }
+    }
+
+    for {
+        g.stoppingLock.RLock()
+        if g.stopped {
+            g.stoppingLock.RUnlock()
+            return default_t, true
+        } else {
+            g.stoppingLock.RUnlock()
+            select {
+            case e := <-g.returned:
+                return e, false
+            case <- time.After(300*time.Microsecond):
+                continue
+            }
+        }
+    }
 
 }
 
