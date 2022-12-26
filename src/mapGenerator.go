@@ -10,6 +10,7 @@ type MapGenerator[K comparable, V any] struct {
 	stopchan chan bool
 	returned chan K
 	stopped  bool
+    started bool
     stoppingLock sync.RWMutex
 }
 
@@ -36,11 +37,23 @@ func (mg *MapGenerator[K, V]) Start(m map[K]V) {
 		mg.stopped = true
         return
 	}()
+
+    mg.started = true
 }
 
 // Returns the next element of the generator, if the generator is finished, returns true. Does return the last element
 func (mg *MapGenerator[K, V]) Next() (K, bool) {
 	default_k := *(new(K))
+
+    if !mg.started {
+        time.Sleep(3000*time.Microsecond)
+        if !mg.started {
+            panic("Generator not started")
+        } else {
+            return mg.Next()
+        }
+    }
+
     for {
         mg.stoppingLock.RLock()
         if mg.stopped {
