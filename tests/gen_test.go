@@ -75,6 +75,9 @@ func TestBaseGeneratorNormalUseCase(t *testing.T) {
 	var counter *int = new(int)
 	*counter         = 10
 
+	var stopCounter *int = new(int)
+	*stopCounter         = 0
+
 	next := func() (int, bool) {
 		if *counter > 0 {
 			*counter--
@@ -83,7 +86,7 @@ func TestBaseGeneratorNormalUseCase(t *testing.T) {
 			return 0, true
 		}
 	}
-	stop := func() { *counter = 999 }
+	stop := func() { *stopCounter ++ }
 	g := new(BaseGenerator[int])
 	g.Start(next, stop)
 
@@ -104,7 +107,12 @@ func TestBaseGeneratorNormalUseCase(t *testing.T) {
 	} else {
 		t.Errorf(generator_not_done_when_should, "that counts down from 10 ", 10, 10)
 	}
-	fmt.Println("test done")
+
+	if *stopCounter > 1 {
+		t.Errorf("stop method fired %v times instead of once.", *stopCounter)
+	} else if *stopCounter == 0 {
+		t.Errorf("stop method was never fired.")
+	}
 }
 
 
