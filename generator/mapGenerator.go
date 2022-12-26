@@ -81,3 +81,16 @@ func (mg *MapGenerator[K, V]) Values(m map[K]V) Generator[V] {
 	with := func(k K) V { return m[k] }
 	return Transform[K, V](mg, with)
 }
+type MapItem[K, V any]struct{
+    Key K // the key of the pair
+    Val V // the value of the pair
+}
+
+func (mg *MapGenerator[K,V]) Items(m map[K]V) Generator[MapItem[K, V]] {
+    if !mg.started {
+        mg.Start(m)
+    }
+
+    with := func(k K) MapItem[K,V] {return MapItem[K,V]{Key:k, Val:m[k]}}
+    return Transform[K, MapItem[K, V]](mg, with)
+}
