@@ -1,6 +1,51 @@
+// Allows sequential extraction, modification of data while keeping the memory footprint light
 package generator
 
+/*
+A generator is a sequence of data. The Next() method allows us to read the next element of the generator.
 
+A generator can be used to apply a function to a sequence by using the Transform function.
+
+For example :
+
+    package main
+
+    import (
+        "fmt"
+        . "github.com/Alex-S-H-P/go-generator/generator"
+    )
+
+    // prints squares in decreasing order from 100 to 1. Prints "done" when done
+    func main() {
+        var counter *int = new(int)
+        *counter = 10
+
+        next := func() (int, bool) {
+            if *counter == 0 {
+                return 0, true
+            } else {
+                *counter--
+                return *counter + 1, false
+            }
+        }
+
+        stop := func() { fmt.Println("done") }
+        g := new(BaseGenerator[int])
+        g.Start(next, stop)
+        transform := func(i int) int { return i * i }
+        transformed := Transform[int, int](g, transform)
+
+        for {
+            if k, done := transformed.Next(); !done {
+                fmt.Println(k) // 100, 81, 64, ...
+            } else {
+                return
+            }
+        }
+    }
+
+
+*/
 type Generator[T any] interface {
     // Returns the next element of the generator, if the generator is finished, returns true. Does return the last element
     Next() (T, bool)
