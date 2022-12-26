@@ -44,7 +44,8 @@ func (mg *MapGenerator[K, V]) Start(m map[K]V) {
 
 // Returns the next element of the generator, if the generator is finished, returns true. Does return the last element
 func (mg *MapGenerator[K, V]) Next() (K, bool) {
-	default_k := *(new(K))
+    default_k := *(new(K))
+    if mg == nil {panic("cannot next <nil> generator")}
 
     if !mg.started {
         time.Sleep(3000*time.Microsecond)
