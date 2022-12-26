@@ -1,8 +1,9 @@
-package generator
+package tests
 
 import (
 	"fmt"
 	"testing"
+	. "github.com/Alex-S-H-P/go-generator/generator"
 )
 
 const generator_not_done_when_should string = "The generator %swas not done at step %v, even though it should've stopped at step %v."
