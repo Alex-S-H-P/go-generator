@@ -9,6 +9,12 @@ import (
 The basis on which generators can be built.
 
 You can give it any function you may want.
+
+BaseGenerators need to be started before they can become usefull.
+Declare one, then immediately after call the Start method.
+
+(*BaseGenerator[T]) implements the Generator[T] interface
+
 */
 type BaseGenerator[T any] struct {
 	next func() (T, bool) // the boolean value returns true when the last element is given
@@ -25,6 +31,18 @@ type BaseGenerator[T any] struct {
 	el      T // currently considered element
 }
 
+/*
+Initializes the BaseGenerator
+
+Arguments :
+
+- next : a function that returns the next element of the generator for its first value.
+    The second value is a boolean indicating whether the generation is done.
+    If the generation is done, then the first value is unspecified.
+
+- stop : a function that is called whenever the generator stops.
+    If there are safety precautions to be put, put them there.
+*/
 func (g *BaseGenerator[T]) Start(next func() (T, bool), stop func()) {
 	if g == nil {
 		panic("Cannot start <nil> generator")
@@ -60,7 +78,7 @@ func (g *BaseGenerator[T]) Start(next func() (T, bool), stop func()) {
 // Returns the next element of the generator, if the generator is previously finished, returns true. Does return the last element
 func (g *BaseGenerator[T]) Next() (T, bool) {
 	default_t := *(new(T))
-    if g == nil {return default_t, true}
+    if g == nil {panic("Cannot give next element on <nil> generator")}
 
 
     if !g.started {
@@ -90,7 +108,10 @@ func (g *BaseGenerator[T]) Next() (T, bool) {
 
 }
 
+// Calls the stop function given at start, then closes the generator, relinquishing its ressources
 func (g *BaseGenerator[T]) Stop() {
+    if g == nil {}
+
 	g.stop()
 	g.stopchan <- true
 }

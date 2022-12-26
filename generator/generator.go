@@ -71,6 +71,8 @@ func Combine[T, V any](meta Generator[T],
     return g
 }
 
+// returns a generator that returns all elements of the slice sequentially.
+// Usefull in conjunction with Transform
 func SliceGenerator[K any](slice []K)Generator[K] {
     var g = new(BaseGenerator[K])
     var i *int = new(int)
