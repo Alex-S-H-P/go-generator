@@ -1,5 +1,6 @@
 package generator
 
+
 type Generator[T any] interface {
     // Returns the next element of the generator, if the generator is finished, returns true. Does return the last element
     Next() (T, bool)
@@ -10,7 +11,7 @@ type Generator[T any] interface {
 
 // returns a slice of all of the remaining elements.
 func Slice[T any](g Generator[T]) []T {
-    slice := make([]T, 32)
+    slice := make([]T, 0, 32)
     for {
         el, finished := g.Next()
         if finished {break}
@@ -46,7 +47,7 @@ func Combine[T, V any](meta Generator[T],
         if mesa != nil {
             v, bb := mesa.Next()
             if bb {
-                mesa_parser = nil
+                mesa = nil
             } else {
                 return v, false
             }
@@ -56,6 +57,7 @@ func Combine[T, V any](meta Generator[T],
         if b {
             return *new(V), true
         }
+
         mesa = mesa_parser(t)
         return mesa.Next()
     }
@@ -71,10 +73,12 @@ func Combine[T, V any](meta Generator[T],
 
 func SliceGenerator[K any](slice []K)Generator[K] {
     var g = new(BaseGenerator[K])
-    var i int
+    var i *int = new(int)
+
     next := func() (K, bool){
-        if i < len(slice) {
-            return slice[i], false
+        if *i < len(slice) {
+            defer func(){(*i)++}()
+            return slice[*i], false
         }
         return *(new(K)), true
     }
